@@ -6,13 +6,16 @@ class Pessoa:
         self.id = id
         self.nome = nome
         self.idpai = idpai
+        self.filhos = []
 
     def __repr__(self):
         return "{}: {}, filho de {}".format(self.id, self.nome, self.idpai if self.idpai else "ninguém")
+    
+    def add_filho(self, filho):
+        self.filhos.append(filho)
 
 def le_origem():
 
-    lista_origem = []
     dict_origem = {}
 
     with open('origem.csv', encoding='utf-8') as arquivo:
@@ -21,7 +24,6 @@ def le_origem():
         next(origem, None)  # pula o cabecalho
         for linha in origem:
             pessoa_lida = Pessoa(linha[0], linha[1], linha[2])
-            lista_origem.append(pessoa_lida)
             dict_origem[pessoa_lida.id] = pessoa_lida
     
     return dict_origem
@@ -33,6 +35,7 @@ def get_filhos(lista_ids_pais):
     for i in dict_origem.values():
         if i.idpai in lista_ids_pais:
             niveln.append(i.id)
+            dict_origem[i.idpai].add_filho(i)
     return niveln
 
 saida = {}
@@ -53,7 +56,9 @@ nivel = 1
 while nivel:
     nivel = gera_saida(nivel)
 
-for i in range(len(saida)):
-    print("======  Item atual: {}  =====".format(i))
-    for num_pessoa in saida[i]:
-        print(dict_origem[num_pessoa])
+def exibe_por_nivel():
+    for i in range(len(saida)):
+        print("======  Item atual: {}  =====".format(i))
+        for num_pessoa in saida[i]:
+            print(dict_origem[num_pessoa])
+
