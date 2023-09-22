@@ -1,4 +1,4 @@
-import csv
+import csv, json
 
 class Pessoa:
     """Uma pessoa que pode ter um pai registrado. Ou não."""
@@ -14,9 +14,12 @@ class Pessoa:
     def add_filho(self, filho):
         self.filhos.append(filho)
 
+    def to_json(self):
+        return json.dumps(self, ensure_ascii=False, default=lambda p: p.__dict__)
+
 def le_origem():
 
-    dict_origem = {}
+    pessoa_por_id = {}
 
     with open('origem.csv', encoding='utf-8') as arquivo:
         origem = csv.reader(arquivo, delimiter=';')
@@ -24,29 +27,29 @@ def le_origem():
         next(origem, None)  # pula o cabecalho
         for linha in origem:
             pessoa_lida = Pessoa(linha[0], linha[1], linha[2])
-            dict_origem[pessoa_lida.id] = pessoa_lida
+            pessoa_por_id[pessoa_lida.id] = pessoa_lida
     
-    return dict_origem
+    return pessoa_por_id
 
-dict_origem = le_origem()
+pessoa_por_id = le_origem()
 
 def get_filhos(lista_ids_pais):
     niveln = []
-    for i in dict_origem.values():
+    for i in pessoa_por_id.values():
         if i.idpai in lista_ids_pais:
             niveln.append(i.id)
-            dict_origem[i.idpai].add_filho(i)
+            pessoa_por_id[i.idpai].add_filho(i)
     return niveln
 
-saida = {}
+pessoas_por_nivel = {}
 
 # nivel0 é quem não tem pai registrado
-saida[0] = [i.id for i in dict_origem.values() if not i.idpai]
+pessoas_por_nivel[0] = [i.id for i in pessoa_por_id.values() if not i.idpai]
 
 def gera_saida(nivel):
-    pais = saida[nivel-1]
+    pais = pessoas_por_nivel[nivel-1]
     if pais:
-        saida[nivel] = get_filhos(pais)
+        pessoas_por_nivel[nivel] = get_filhos(pais)
         nivel = nivel + 1
         return nivel
     else:
@@ -57,8 +60,15 @@ while nivel:
     nivel = gera_saida(nivel)
 
 def exibe_por_nivel():
-    for i in range(len(saida)):
+    for i in range(len(pessoas_por_nivel)):
         print("======  Item atual: {}  =====".format(i))
-        for num_pessoa in saida[i]:
-            print(dict_origem[num_pessoa])
+        for num_pessoa in pessoas_por_nivel[i]:
+            print(pessoa_por_id[num_pessoa])
 
+    
+def exibe_hierarquia(pessoa, nivel_atual = 0):
+    """ função recursiva para imprimir filhos, netos, bisnetos, etc de uma pessoa  """
+    recuo = "    " * nivel_atual
+    print(recuo + str(pessoa))
+    for filho in pessoa.filhos:
+        exibe_hierarquia(filho, nivel_atual + 1)
